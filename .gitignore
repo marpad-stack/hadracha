@@ -1,0 +1,6 @@
+node_modules/
+credentials.js
+videos/**/*.webm
+check_frames*/
+review*/
+*.tmp.png
