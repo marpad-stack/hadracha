@@ -112,47 +112,65 @@ const QUICK_SEARCHES = ['מבצע כיתתי', 'עיצובי קירות', 'כי�
   await page.waitForTimeout(p);
   await hideCaption(page);
 
-  await page.mouse.wheel(0, 550);
-  await page.waitForTimeout(600);
-  const worldsHeading = page.getByText('עולמות תוכן', { exact: true }).first();
-  await step(page, worldsHeading, 'מיד מתחת לחיפוש מופיעה שורת "עולמות תוכן" - תצוגה מקדימה של הקטגוריות הראשיות');
+  // Sweep every row heading on the home page.
+  // IMPORTANT: match H2 only. The site uses H3 for the card titles inside each row
+  // (~520 of them on a fully scrolled home page) - matching "h2,h3" and taking the
+  // first visible one highlighted random cards instead of the row headings.
+  // Scroll each heading to the centre and re-measure it AFTER the page settles;
+  // measuring before the scroll finished put the box in the wrong place.
+  const MAX_ROWS = 12;
+  for (let i = 0; i < MAX_ROWS; i++) {
+    const info = await page.evaluate((idx) => {
+      const hs = [...document.querySelectorAll('h2')];
+      if (idx >= hs.length) return null;
+      hs[idx].scrollIntoView({ block: 'center', behavior: 'instant' });
+      return { text: hs[idx].textContent.trim() };
+    }, i);
+    if (!info) break;
+    await page.waitForTimeout(450);
+    await waitForImages(page);
 
-  // sweep through every row heading currently rendered, brisk pace
-  let lastHeadingText = null;
-  for (let i = 0; i < 9; i++) {
-    await page.mouse.wheel(0, 520);
-    await page.waitForTimeout(550);
-    const info = await page.evaluate(() => {
-      const hs = [...document.querySelectorAll('h2,h3')];
-      const vh = window.innerHeight;
-      const visible = hs.filter(h => { const r = h.getBoundingClientRect(); return r.top > 80 && r.top < vh - 220 && r.width > 0; });
-      if (!visible.length) return null;
-      const h = visible[0];
-      const hr = h.getBoundingClientRect();
-      return { text: h.textContent.trim(), rect: { x: hr.x, y: hr.y, width: hr.width, height: hr.height } };
-    });
-    if (!info || info.text === lastHeadingText) continue;
-    lastHeadingText = info.text;
+    const rect = await page.evaluate((idx) => {
+      const h = [...document.querySelectorAll('h2')][idx];
+      if (!h) return null;
+      const r = h.getBoundingClientRect();
+      return r.width > 0 ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+    }, i);
+    if (!rect) continue;
+
     await injectOverlay(page);
-    await highlightRect(page, info.rect);
-    if (info.text.includes('פרשת השבוע')) {
-      p = await caption(page, `השורה "${info.text}" מתעדכנת אוטומטית כל שבוע לפי הפרשה הנוכחית - תמיד רלוונטית`);
+    await highlightRect(page, rect);
+    let text;
+    if (i === 0) {
+      text = `מיד מתחת לחיפוש מופיעה שורת "${info.text}" - תצוגה מקדימה של הקטגוריות הראשיות`;
+    } else if (info.text.includes('פרשת השבוע')) {
+      text = `השורה "${info.text}" מתעדכנת אוטומטית כל שבוע לפי הפרשה הנוכחית - תמיד רלוונטית`;
     } else {
-      p = await caption(page, `שורה נוספת: "${info.text}" - גם בה אפשר לגלול אופקית או ללחוץ "הצג הכל"`);
+      text = `שורה נוספת: "${info.text}" - גם בה אפשר לגלול אופקית או ללחוץ "הצג הכל"`;
     }
-    await page.waitForTimeout(Math.min(p, 2400));
+    p = await caption(page, text);
+    await page.waitForTimeout(Math.min(p, 2600));
     await hideCaption(page); await hideHighlight(page);
   }
 
-  // click "show all" on one themed row
+  // Click "show all" on one themed row. Same H2-only rule as the sweep above:
+  // scroll a real row heading into view first, then find the control on its line.
+  await page.evaluate(() => {
+    const hs = [...document.querySelectorAll('h2')];
+    const h = hs[1] || hs[0];
+    if (h) h.scrollIntoView({ block: 'center', behavior: 'instant' });
+  });
+  await page.waitForTimeout(500);
+  await waitForImages(page);
+
   const rowInfo = await page.evaluate(() => {
-    const hs = [...document.querySelectorAll('h2,h3')];
+    const hs = [...document.querySelectorAll('h2')];
     const vh = window.innerHeight;
     const visible = hs.filter(h => { const r = h.getBoundingClientRect(); return r.top > 80 && r.top < vh - 220 && r.width > 0; });
     if (!visible.length) return null;
     const h = visible[0];
     const hr = h.getBoundingClientRect();
-    const buttons = [...document.querySelectorAll('button')].filter(b => b.textContent.includes('הצג הכל'));
+    const buttons = [...document.querySelectorAll('button,a')].filter(b => b.textContent.includes('הצג הכל'));
     let best = null, bestDist = Infinity;
     for (const b of buttons) {
       const br = b.getBoundingClientRect();

@@ -1,11 +1,20 @@
 async function injectOverlay(page) {
-  await page.addStyleTag({
+  // Called again after every navigation (a new document drops the overlay nodes),
+  // but also repeatedly inside loops - so guard against appending duplicate styles.
+  const alreadyStyled = await page.evaluate(() => {
+    if (document.documentElement.dataset.tutStyled) return true;
+    document.documentElement.dataset.tutStyled = '1';
+    return false;
+  });
+  if (!alreadyStyled) await page.addStyleTag({
     content: `
       #tut-highlight-box {
         position: fixed; z-index: 999998; pointer-events: none;
         border: 4px solid #FFD400; border-radius: 12px;
         box-shadow: 0 0 0 4px rgba(107,27,120,0.55), 0 0 24px 6px rgba(255,212,0,0.7);
-        transition: all 0.45s cubic-bezier(.4,0,.2,1);
+        /* Fade only - never animate position. Transitioning "all" made the box
+           visibly fly across the screen between targets. */
+        transition: opacity 0.3s ease;
         opacity: 0;
       }
       #tut-highlight-box.show { opacity: 1; }

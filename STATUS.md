@@ -9,8 +9,12 @@ Final videos in `videos/part1/`:
 Script: `part1-login.js`. Reviewed frame-by-frame and approved.
 
 **Part 2 - איך למצוא מערכים (ניווט/עולמות תוכן/חיפוש): IN PROGRESS, NOT YET APPROVED.**
-Script: `part2-navigation.js`. Latest webm not yet produced/reviewed (recording was
-stopped mid-run by user request - see below). No approved MP4 exports yet for Part 2.
+Script: `part2-navigation.js`. A full 11:01 recording was produced on 2026-09-08 and
+reviewed by the user. Exports in `videos/part2/`:
+- `חלק2-איכות-גבוהה.mp4` (31.4MB)
+- `חלק2-לוואטסאפ.mp4` (7.5MB)
+**NOT approved** - the user watched it and gave 9 specific corrections, listed below.
+These are the next thing to work on.
 
 ### Part 2 scope, as most recently agreed with the user:
 1. Opening: mention that the viewer should confirm they're logged in (see Part 1).
@@ -34,7 +38,46 @@ stopped mid-run by user request - see below). No approved MP4 exports yet for Pa
    "התחברת"/"שכחת" that read the same for any gender). Must feel professional,
    no stuck/flickering/overlapping UI, nothing "written strangely."
 
-### Bugs already found and fixed in part2-navigation.js during this session:
+### USER'S 9 CORRECTIONS on the 2026-09-08 recording (NOT yet implemented - START HERE):
+1. **Cut the login.** The first seconds show the login happening. The video should
+   open with the user already logged in.
+2. **Drop the parenthetical** "(כפי שנראה בחלק 1)" from the opening caption.
+3. **The legend intro flip is too fast.** The 3-step flip through the legend at the
+   start is unclear and ugly - either show it steadily or drop the flip.
+4. **~20 unclear seconds near the start.** It highlights the "עולמות תוכן" row while
+   the legend says "כותרות בעמוד הבית" - mismatched, and nothing useful is being
+   shown. It should scroll further down and present this in an orderly way.
+5. **Pacing.** Not too long, not too fast - each segment long enough to see and
+   understand, without dragging.
+6. **The first 5.5 minutes drag** with no clear explanation of the main headings.
+   What it SHOULD do: move through at a normal pace and show *logically* that there
+   are headings for the current//upcoming season, each with lesson plans grouped
+   conveniently under it; and demonstrate ONCE, inside a single heading, that there
+   are internal filter buttons that make it easier.
+7. **עולמות תוכן runs far too fast.**
+8. **Cover the various series** - פרשת השבוע and the like.
+9. **Search is relatively good.** But when it moves to the filters on the right,
+   something about the presentation is not clear enough.
+
+### Bugs found and fixed on 2026-09-08 (these produced the recording above):
+- **Row headings were never highlighted.** The home-page sweep matched
+  `querySelectorAll('h2,h3')` and took the first visible match. The site uses H2 for
+  row headings (only 8 on the home page) and H3 for card titles (~524 of them), so
+  it was highlighting random cards. Now matches H2 only. Verified against the live
+  DOM before re-recording.
+- **The highlight box flew across the screen** between targets - it had
+  `transition: all 0.45s` in `tutorial-helpers.js`. Now transitions opacity only, so
+  it fades in and out in place without animating position.
+- **Highlight box landed off-target.** Rects were measured immediately after a
+  `mouse.wheel` scroll, before the scroll settled and images finished loading. Now
+  each heading is scrolled to centre with `scrollIntoView({behavior:'instant'})`,
+  the page is allowed to settle, and the rect is re-measured just before highlighting.
+- **Duplicate style tags.** `injectOverlay` ran `addStyleTag` on every call (dozens
+  per run). Now guarded with a `data-tut-styled` flag on the document element.
+- **"הצג הכל" was searched for as `<button>` only**; the site may render them as
+  links. Now searches `button,a`.
+
+### Bugs found and fixed in the earlier session:
 - Filter-loop was silently skipping 2 of 11 categories ("פורמט למידה",
   "ליב״ה ומקצועות כלליים") because Playwright's click was failing an internal
   stability check and the failure was being swallowed silently. Fixed with
@@ -44,18 +87,20 @@ stopped mid-run by user request - see below). No approved MP4 exports yet for Pa
 - Added `waitForImages()` helper to avoid highlighting cards whose thumbnails
   haven't finished loading yet (was causing "broken image" look).
 
+### Home page structure, as measured on the live site 2026-09-08:
+The home page has exactly **8 H2 row headings** (and ~524 H3 card titles). At the
+time of measurement the rows were: `📚 עולמות תוכן`, `פתיחת שנה`, `סביבות למידה`,
+`חודש אלול`, `ראש השנה`, `חגי תשרי: צום גדליה, עשרת ימי תשובה, יום כיפור וסוכות`,
+`חודש תשרי`, `חדש באתר: המערכים האחרונים שעלו`. There were 8 "הצג הכל" controls.
+**Note: there is currently no "פרשת השבוע" row on the home page** (it is holiday
+season), even though the brief asks for special emphasis on it - it only appears as
+its own content world. Rows change with the season, so never hardcode this list.
+
 ### Open / unresolved when the session was paused:
-- The user said the latest attempt "read the lines wrong" / wasn't good
-  (message: "זה ממש לא טוב והוא לא קרא את השורות כמו שצריך") but the session
-  was paused before she could clarify exactly what was wrong. **First thing
-  next session: ask her to clarify what specifically was wrong** before
-  re-recording blindly - possibly the drill-down captions/logic for the 13
-  worlds (untested end-to-end at full length before the stop), or something
-  about how a specific line/caption was read/phrased.
-- The recording that was running (via `node part2-navigation.js`) was killed
-  mid-run at the user's request - no video was produced from that run. The
-  `videos/part2/` folder may contain a partial/incomplete .webm from the
-  killed process - **check and probably delete before the next real run.**
+- RESOLVED: the earlier complaint that it "didn't mark the headings" and was
+  "a mess" turned out to be the H2/H3 and `transition: all` bugs listed above.
+- **The 9 corrections above are the live to-do list.** Most of them are about
+  pacing and about the home-page section being long but uninformative.
 - Still waiting on the user to send a real screenshot of her own account's
   "המשך מהיכן שהפסקת" row, to composite into Part 2 later.
 
@@ -68,14 +113,32 @@ stopped mid-run by user request - see below). No approved MP4 exports yet for Pa
   rather than downloading Chromium, because Chromium's own download was
   blocked by network security software on the original machine).
 - Video recording via Playwright's built-in `recordVideo` (produces .webm).
-  This required manually placing an `ffmpeg-static` binary at
-  `%LOCALAPPDATA%\ms-playwright\ffmpeg-1011\ffmpeg-win64.exe` on the machine
-  where this was set up, because Playwright's own `npx playwright install
-  ffmpeg` download was also network-blocked. **On a different computer this
-  may need to be redone** - check if that file exists; if not, `npm install`
-  the `ffmpeg-static` package (already in package.json) and copy its bundled
-  `ffmpeg.exe` to that path, or find another way to get Playwright video
-  recording working there.
+  This requires an ffmpeg binary at
+  `%LOCALAPPDATA%\ms-playwright\ffmpeg-1011\ffmpeg-win64.exe`, because
+  Playwright's own `npx playwright install ffmpeg` download was network-blocked.
+  **Redo this on every new machine.** Confirmed working recipe (2026-09-08):
+  ```powershell
+  npm install
+  $d = "$env:LOCALAPPDATA\ms-playwright\ffmpeg-1011"
+  New-Item -ItemType Directory -Force -Path $d
+  Copy-Item .\node_modules\ffmpeg-static\ffmpeg.exe "$d\ffmpeg-win64.exe"
+  ```
+  The `1011` revision number must match `ffmpeg`'s `revision` in
+  `node_modules/playwright-core/browsers.json` - check it rather than assuming.
+  Note npm 11+ blocks package install scripts by default, so `ffmpeg-static`'s
+  postinstall may not run; verify `node_modules/ffmpeg-static/ffmpeg.exe` exists
+  (~79MB) before copying.
+- Git is installed but **not on PATH** in fresh shells on the Windows machine.
+  Either use the full path `C:\Program Files\Git\cmd\git.exe`, or refresh PATH:
+  `$env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")`
+  The same applies right after any `winget install` - shells opened earlier keep
+  the stale PATH.
+- Converting the recorded .webm to the two MP4 deliverables:
+  ```powershell
+  $ff = ".\node_modules\ffmpeg-static\ffmpeg.exe"
+  & $ff -y -i in.webm -c:v libx264 -preset medium -crf 21 -pix_fmt yuv420p -movflags +faststart "חלק2-איכות-גבוהה.mp4"
+  & $ff -y -i in.webm -vf "scale=960:540" -c:v libx264 -preset medium -crf 29 -pix_fmt yuv420p -movflags +faststart "חלק2-לוואטסאפ.mp4"
+  ```
 - `node_modules/ffmpeg-static/ffmpeg.exe` is also used directly (via
   `./node_modules/ffmpeg-static/ffmpeg.exe`) for all post-processing: cropping
   screenshots, building the blur/spotlight composite for the WhatsApp capture,
